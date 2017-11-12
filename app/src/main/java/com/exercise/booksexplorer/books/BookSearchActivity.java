@@ -86,7 +86,7 @@ public class BookSearchActivity extends BaseActivity implements SearchView.OnQue
          * @return true if the task is working in progress, false otherwise
          */
         public boolean isLoading() {
-            return !mIdlingResource.isIdleNow();
+            return !getIdlingResource().isIdleNow();
         }
 
         /**
@@ -116,7 +116,8 @@ public class BookSearchActivity extends BaseActivity implements SearchView.OnQue
                                 @Override
                                 public void accept(List<Volume> volumeList) throws Exception {
                                     mItemsCount = volumeList.size();
-                                    mIdlingResource.setIdleState(true);
+                                    if (mIdlingResource != null)
+                                        mIdlingResource.setIdleState(true);
 
                                     // stops the loading indicator and add the new volumes
                                     adapter.removeLoadingFooter();
@@ -127,7 +128,8 @@ public class BookSearchActivity extends BaseActivity implements SearchView.OnQue
                                 public void accept(Throwable throwable) throws Exception {
                                     Log.e(TAG, throwable.getMessage(), throwable);
                                     mItemsCount = 0;
-                                    mIdlingResource.setIdleState(true);
+                                    if (mIdlingResource != null)
+                                        mIdlingResource.setIdleState(true);
                                     if (adapter.getItemCount() > 0)
                                         // Show retry at the bottom of the list if failure occurred when some items are already present
                                         adapter.showRetry(true, R.string.error_unknown);
@@ -156,7 +158,8 @@ public class BookSearchActivity extends BaseActivity implements SearchView.OnQue
          */
         @Override
         public void subscribe(ObservableEmitter<List<Volume>> emitter) throws Exception {
-            mIdlingResource.setIdleState(false);
+            if (mIdlingResource != null)
+                mIdlingResource.setIdleState(false);
             Books.Volumes.List volumeList = getBooks().volumes().list(mQuery);
 
             // Set offset of the new page requested

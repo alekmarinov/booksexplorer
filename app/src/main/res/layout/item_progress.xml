@@ -3,7 +3,7 @@
              xmlns:tools="http://schemas.android.com/tools"
              android:layout_width="match_parent"
              android:layout_height="wrap_content"
-             tools:background="#fafafa">
+             android:background="#fafafa">
 
     <ProgressBar
         android:id="@+id/loadmore_progress"
@@ -20,8 +20,7 @@
         android:orientation="horizontal"
         android:paddingBottom="@dimen/activity_margin"
         android:paddingTop="@dimen/activity_margin"
-        android:visibility="gone"
-        tools:visibility="visible">
+        android:visibility="gone">
 
         <ImageButton
             android:id="@+id/loadmore_retry"

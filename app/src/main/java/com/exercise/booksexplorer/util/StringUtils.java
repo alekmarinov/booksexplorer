@@ -1,3 +1,8 @@
+/**
+ * Project:     BooksExplorer
+ * Date:        11/9/2017
+ * Description: String utilities
+ */
 package com.exercise.booksexplorer.util;
 
 import java.util.List;
