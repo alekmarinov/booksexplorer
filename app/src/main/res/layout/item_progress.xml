@@ -30,7 +30,7 @@
             android:layout_gravity="center"
             android:layout_marginLeft="@dimen/activity_margin_content"
             android:layout_marginStart="@dimen/activity_margin_content"
-            android:background="@drawable/rety_selector"
+            android:background="@drawable/retry_selector"
             android:padding="@dimen/activity_margin_half"
             android:src="@drawable/ic_refresh_black_24dp"
             android:tint="@color/placeholder_grey"

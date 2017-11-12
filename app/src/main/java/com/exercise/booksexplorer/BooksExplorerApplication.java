@@ -1,9 +1,7 @@
 /**
- * Copyright (c) 2017, Polygon Group
  * Project:     BooksExplorer
- * Author:      alekm
  * Date:        11/9/2017
- * Description:
+ * Description: The application class
  */
 package com.exercise.booksexplorer;
 

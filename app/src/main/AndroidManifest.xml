@@ -14,7 +14,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".search.BookSearchActivity"
+            android:name=".books.BookSearchActivity"
             android:label="@string/search_title"
             android:theme="@style/AppTheme.NoActionBar"
             android:launchMode="singleTop">
@@ -32,5 +32,8 @@
                 android:name="android.app.searchable"
                 android:resource="@xml/searchable"/>
         </activity>
+        <activity
+            android:theme="@style/AppTheme.NoActionBar"
+            android:name=".books.BookDetailsActivity"/>
     </application>
 </manifest>

@@ -36,6 +36,7 @@ dependencies {
     // Testing-only dependencies
     androidTestCompile 'com.android.support.test:runner:1.0.1'
     androidTestCompile 'com.android.support.test.espresso:espresso-core:3.0.1'
+    androidTestCompile('com.android.support.test.espresso:espresso-contrib:3.0.1')
 
     compile 'com.google.apis:google-api-services-books:v1-rev93-1.23.0'
     compile 'com.android.support:appcompat-v7:26.+'
@@ -47,6 +48,8 @@ dependencies {
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     compile 'com.jakewharton:butterknife:8.8.1'
     compile 'com.github.bumptech.glide:glide:4.3.1'
+    compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
+    compile 'io.reactivex.rxjava2:rxjava:2.1.5'
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
     testCompile 'junit:junit:4.12'
     implementation "android.arch.paging:runtime:1.0.0-alpha3"
