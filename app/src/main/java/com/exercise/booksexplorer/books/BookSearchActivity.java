@@ -222,7 +222,8 @@ public class BookSearchActivity extends BaseActivity implements SearchView.OnQue
 
         // apply searchable options on the SearchView
         SearchManager searchManager = (SearchManager) getSystemService(SEARCH_SERVICE);
-        mBookSearchBinding.searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+        if (searchManager != null)
+            mBookSearchBinding.searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
         mBookSearchBinding.searchView.setOnQueryTextListener(this);
 
         mBookSearchBinding.booksRv.setHasFixedSize(true);
