@@ -1,4 +1,4 @@
-/**
+/*
  * Project:     BooksExplorer
  * Date:        11/9/2017
  * Description: The application class

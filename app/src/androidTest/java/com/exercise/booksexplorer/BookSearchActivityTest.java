@@ -1,4 +1,4 @@
-/**
+/*
  * Project:     BooksExplorer
  * Date:        11/9/2017
  * Description: BookSearchActivity testing class
@@ -31,7 +31,7 @@ import static org.hamcrest.Matchers.greaterThan;
 @RunWith(AndroidJUnit4.class)
 public class BookSearchActivityTest {
     private IdlingResource mIdlingResource;
-    private String mQueryBook = "Lua";
+    private static final String TEST_QUERY = "Lua";
 
     @Rule
     public ActivityTestRule<BookSearchActivity> mActivityRule = new ActivityTestRule<>(
@@ -57,7 +57,7 @@ public class BookSearchActivityTest {
         onView(withId(R.id.search_view)).perform(click());
 
         // Type query and then press enter to perform search
-        onView(isAssignableFrom(AutoCompleteTextView.class)).perform(typeText(mQueryBook), pressKey(KeyEvent.KEYCODE_ENTER));
+        onView(isAssignableFrom(AutoCompleteTextView.class)).perform(typeText(TEST_QUERY), pressKey(KeyEvent.KEYCODE_ENTER));
 
         // Check if the list is populated with some results
         onView(withId(R.id.books_rv)).check(new RecyclerViewItemCountAssertion(greaterThan(0)));

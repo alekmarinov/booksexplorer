@@ -1,4 +1,4 @@
-/**
+/*
  * Project:     BooksExplorer
  * Date:        11/9/2017
  * Description: Google Books API based search activity
@@ -12,7 +12,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 import android.support.test.espresso.IdlingResource;
-import android.support.test.espresso.idling.CountingIdlingResource;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.SearchView;
 import android.util.Log;
@@ -53,6 +52,11 @@ public class BookSearchActivity extends BaseActivity implements SearchView.OnQue
     @Inject
     Books mBooks;
 
+    enum StateParam {
+        QUERY,
+        START
+    }
+
     /**
      * Observable providing new page with volume items asynchronously
      */
@@ -78,14 +82,15 @@ public class BookSearchActivity extends BaseActivity implements SearchView.OnQue
          *
          * @param query           a query to perform the search for books
          */
-        public VolumesObservable(String query) {
+        VolumesObservable(String query, int start) {
             mQuery = query;
+            mStart = start;
         }
 
         /**
          * @return true if the task is working in progress, false otherwise
          */
-        public boolean isLoading() {
+        boolean isLoading() {
             return !getIdlingResource().isIdleNow();
         }
 
@@ -99,7 +104,7 @@ public class BookSearchActivity extends BaseActivity implements SearchView.OnQue
         /**
          * Requests the first or next page
          */
-        public void nextPage() {
+        void nextPage() {
             Log.i(TAG, ".nextPage: mStart = " + mStart + ", mItemsCount = " + mItemsCount);
             mStart = mStart + mItemsCount;
 
@@ -145,7 +150,7 @@ public class BookSearchActivity extends BaseActivity implements SearchView.OnQue
         /**
          * Retries retrieving last page
          */
-        public void retry() {
+        void retry() {
             Log.i(TAG, ".retry");
             // next page will start at the same position as the current
             mItemsCount = 0;
@@ -163,7 +168,7 @@ public class BookSearchActivity extends BaseActivity implements SearchView.OnQue
             Books.Volumes.List volumeList = getBooks().volumes().list(mQuery);
 
             // Set offset of the new page requested
-            volumeList.setStartIndex(Long.valueOf(mStart));
+            volumeList.setStartIndex((long)mStart);
             Volumes volumes = volumeList.execute();
 
             // Keep the total items in order to know if there are more pages to come
@@ -181,26 +186,24 @@ public class BookSearchActivity extends BaseActivity implements SearchView.OnQue
         /**
          * Cancels the subscription to this observable
          */
-        public void cancel() {
+        void cancel() {
             if (mDisposable != null) {
                 mDisposable.dispose();
             }
         }
+
+        void saveState(Bundle outState) {
+            outState.putString(StateParam.QUERY.name(), mQuery);
+            outState.putInt(StateParam.START.name(), mStart - mItemsCount);
+        }
     }
-
-
     /**
      * Handles query submit.
      * The method can be invoked by SearchView or in response of intent ACTION_SEARCH
      */
     @Override
     public boolean onQueryTextSubmit(String query) {
-        Log.i(TAG, ".performSearch: query = " + query);
-        mBookSearchBinding.searchView.setIconified(true);
-        setResultPlaceHolder(getString(R.string.search_progress, query));
-        adapter.clear();
-        mVolumesObservable = new VolumesObservable(query);
-        mVolumesObservable.nextPage();
+        performQuery(query, 0);
         return true;
     }
 
@@ -212,6 +215,7 @@ public class BookSearchActivity extends BaseActivity implements SearchView.OnQue
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.i(TAG, ".onCreate");
 
         mBookSearchBinding = DataBindingUtil.setContentView(this, R.layout.activity_book_search);
         setSupportActionBar(mBookSearchBinding.toolbar);
@@ -274,10 +278,19 @@ public class BookSearchActivity extends BaseActivity implements SearchView.OnQue
         handleIntent(intent);
     }
 
+    private void performQuery(String query, int start) {
+        Log.i(TAG, String.format(".performQuery: query = %s, start = %d", query, start));
+        mBookSearchBinding.searchView.setIconified(true);
+        setResultPlaceHolder(getString(R.string.search_progress, query));
+        adapter.clear();
+        mVolumesObservable = new VolumesObservable(query, start);
+        mVolumesObservable.nextPage();
+    }
+
     private void handleIntent(Intent intent) {
         if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
             String query = intent.getStringExtra(SearchManager.QUERY);
-            onQueryTextSubmit(query);
+            performQuery(query, 0);
         }
     }
 
@@ -308,6 +321,23 @@ public class BookSearchActivity extends BaseActivity implements SearchView.OnQue
 
     private void hideResultPlaceHolder() {
         setResultPlaceHolder(null);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (mVolumesObservable != null)
+            mVolumesObservable.saveState(outState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        String query = savedInstanceState.getString(StateParam.QUERY.name());
+        if (query != null) {
+            int start = savedInstanceState.getInt(StateParam.START.name(), 0);
+            performQuery(query, start);
+        }
     }
 
     public void onStop() {

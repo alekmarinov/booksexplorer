@@ -1,4 +1,4 @@
-/**
+/*
  * Project:     BooksExplorer
  * Date:        11/9/2017
  * Description: Book details
@@ -49,7 +49,9 @@ public class BookDetailsActivity extends BaseActivity {
         mDetailsBinding = DataBindingUtil.setContentView(this, R.layout.activity_book_details);
 
         setSupportActionBar(mDetailsBinding.toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null)
+            actionBar.setDisplayHomeAsUpEnabled(true);
 
         final String bookId = getIntent().getStringExtra(Param.VOLUME_ID.name());
 
@@ -95,7 +97,9 @@ public class BookDetailsActivity extends BaseActivity {
         mDetailsBinding.bookTitleTextview.setText(volume.getVolumeInfo().getTitle());
         mDetailsBinding.bookPublisherTextview.setText(volume.getVolumeInfo().getPublisher());
         mDetailsBinding.bookDescription.setText(volume.getVolumeInfo().getDescription());
-        getSupportActionBar().setTitle(volume.getVolumeInfo().getTitle());
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null)
+            actionBar.setTitle(volume.getVolumeInfo().getTitle());
     }
 
     public static Intent makeIntent(Context context, Volume book) {

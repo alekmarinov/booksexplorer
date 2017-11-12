@@ -1,4 +1,4 @@
-/**
+/*
  * Project:     BooksExplorer
  * Date:        11/9/2017
  * Description: A scrolling listener triggering an event when the user scrolls near to the end of the currently loaded page.
@@ -16,16 +16,9 @@ import android.support.v7.widget.RecyclerView;
  * Copyright (c) 2016. Suleiman Ali Shakir. All rights reserved.
  */
 public abstract class PaginationScrollListener extends RecyclerView.OnScrollListener {
-    private static final String TAG = PaginationScrollListener.class.getSimpleName();
+    private LinearLayoutManager layoutManager;
 
-    LinearLayoutManager layoutManager;
-
-    /**
-     * Supporting only LinearLayoutManager for now.
-     *
-     * @param layoutManager
-     */
-    public PaginationScrollListener(LinearLayoutManager layoutManager) {
+    PaginationScrollListener(LinearLayoutManager layoutManager) {
         this.layoutManager = layoutManager;
     }
 

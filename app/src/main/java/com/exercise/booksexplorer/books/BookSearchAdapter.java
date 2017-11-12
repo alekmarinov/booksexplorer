@@ -1,4 +1,4 @@
-/**
+/*
  * Project:     BooksExplorer
  * Date:        11/9/2017
  * Description: An adapter for RecyclerView with paging capabilities and error resiliency.
@@ -8,7 +8,6 @@
 package com.exercise.booksexplorer.books;
 
 import android.content.Context;
-import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,7 +33,6 @@ import butterknife.ButterKnife;
  * An adapter for RecyclerView with paging capabilities and error resiliency.
  */
 public class BookSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-  private static final String TAG = BookSearchAdapter.class.getSimpleName();
   private static final int ITEM = 0;
   private static final int LOADING = 1;
   private List<Volume> mBooks;
@@ -54,7 +52,7 @@ public class BookSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     void retryPageLoad();
   }
 
-  public BookSearchAdapter(Context context, Callbacks callbacks) {
+  BookSearchAdapter(Context context, Callbacks callbacks) {
     mContext = context;
     mCallbacks = callbacks;
     mBooks = new ArrayList<>();
@@ -62,9 +60,6 @@ public class BookSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
 
   /**
    * Creates RecyclerView.ViewHolder of type BookVH or LoadingVH depending on the given view type ITEM or LOADING
-   * @param parent
-   * @param viewType
-   * @return
    */
   @Override
   public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -143,7 +138,7 @@ public class BookSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
    * Appends a book to the adapter
    * @param volume new book to append to the adapter's list
    */
-  public void add(Volume volume) {
+  private void add(Volume volume) {
     mBooks.add(volume);
     notifyItemInserted(mBooks.size() - 1);
   }
@@ -152,7 +147,7 @@ public class BookSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
    * Appends multiple books to the adapter
    * @param volumes list of books to append to the adapter
    */
-  public void addAll(List<Volume> volumes) {
+  void addAll(List<Volume> volumes) {
     mBooks.addAll(volumes);
     notifyItemRangeInserted(mBooks.size() -  volumes.size(), volumes.size());
   }
@@ -161,7 +156,7 @@ public class BookSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
    * Removes a book from the adapter
    * @param volume is the book to be removed
    */
-  public void remove(Volume volume) {
+  private void remove(Volume volume) {
     int position = mBooks.indexOf(volume);
     if (position > -1) {
       mBooks.remove(position);
@@ -172,7 +167,7 @@ public class BookSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
   /**
    * Remove all books from the adapter
    */
-  public void clear() {
+  void clear() {
     mIsLoadingAdded = false;
     while (getItemCount() > 0) {
       remove(getItem(0));
@@ -182,7 +177,7 @@ public class BookSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
   /**
    * Shows loading progress indicator
    */
-  public void addLoadingFooter() {
+  void addLoadingFooter() {
     if (mIsLoadingAdded)
       return ;
     mIsLoadingAdded = true;
@@ -192,7 +187,7 @@ public class BookSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
   /**
    * Hides the loading progress indicator
    */
-  public void removeLoadingFooter() {
+  void removeLoadingFooter() {
     if (!mIsLoadingAdded)
       return ;
     mIsLoadingAdded = false;
@@ -209,7 +204,7 @@ public class BookSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
   /**
    * Gets a book at specified position
    */
-  public Volume getItem(int position) {
+  Volume getItem(int position) {
     return mBooks.get(position);
   }
 
@@ -219,7 +214,7 @@ public class BookSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
    * @param show true to show the retry view
    * @param errResId string resource to display if page load fails
    */
-  public void showRetry(boolean show, @Nullable int errResId) {
+  void showRetry(boolean show, int errResId) {
     mRetryPageLoad = show;
     notifyItemChanged(mBooks.size() - 1);
     mErrResId = errResId;
@@ -228,13 +223,13 @@ public class BookSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
   /**
    * Book ViewHolder
    */
-  public static class BookVH extends RecyclerView.ViewHolder {
+  static class BookVH extends RecyclerView.ViewHolder {
     @BindView(R.id.book_title) TextView mBookTitle;
     @BindView(R.id.book_authors) TextView mBookAuthors;
     @BindView(R.id.book_image) ImageView mBookImage;
     @BindView(R.id.book_description) TextView mBookDescription;
 
-    public BookVH(ViewGroup view) {
+    BookVH(ViewGroup view) {
       super(view);
       ButterKnife.bind(this, view);
     }
@@ -243,13 +238,13 @@ public class BookSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
   /**
    * Loading ViewHolder
    */
-  protected class LoadingVH extends RecyclerView.ViewHolder implements View.OnClickListener {
+  class LoadingVH extends RecyclerView.ViewHolder implements View.OnClickListener {
     @BindView(R.id.loadmore_progress) ProgressBar mProgressBar;
     @BindView(R.id.loadmore_retry) ImageButton mRetryBtn;
     @BindView(R.id.loadmore_errortxt) TextView mErrorTxt;
     @BindView(R.id.loadmore_errorlayout) LinearLayout mErrorLayout;
 
-    public LoadingVH(View view) {
+    LoadingVH(View view) {
       super(view);
       ButterKnife.bind(this, view);
       mRetryBtn.setOnClickListener(this);

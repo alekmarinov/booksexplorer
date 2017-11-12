@@ -1,15 +1,11 @@
-/**
- * Copyright (c) 2017, Polygon Group
+/*
  * Project:     BooksExplorer
- * Author:      alekm
  * Date:        11/9/2017
- * Description:
+ * Description: Book API module
  */
 package com.exercise.booksexplorer.dagger.modules;
 
 import android.app.Application;
-import android.content.Context;
-import android.content.res.Resources;
 
 import com.exercise.booksexplorer.R;
 import com.google.api.client.http.HttpTransport;

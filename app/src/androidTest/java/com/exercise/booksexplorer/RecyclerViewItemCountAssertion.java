@@ -1,4 +1,4 @@
-/**
+/*
  * Project:     BooksExplorer
  * Date:        11/9/2017
  * Description: RecyclerView items count matcher
@@ -17,7 +17,7 @@ import static android.support.test.espresso.matcher.ViewMatchers.assertThat;
 class RecyclerViewItemCountAssertion implements ViewAssertion {
     private final Matcher<Integer> matcher;
 
-    public RecyclerViewItemCountAssertion(Matcher<Integer> matcher) {
+    RecyclerViewItemCountAssertion(Matcher<Integer> matcher) {
         this.matcher = matcher;
     }
 
