@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
-        tools:context="com.exercise.booksexplorer.books.BookSearchActivity">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.exercise.booksexplorer.books.BookSearchActivity">
 
     <android.support.design.widget.CoordinatorLayout
         android:layout_width="match_parent"
@@ -38,7 +38,8 @@
                         android:layout_margin="@dimen/search_margin"
                         android:clickable="true"
                         app:layout_anchor="@+id/app_bar"
-                        app:layout_anchorGravity="top|start"/>
+                        app:layout_anchorGravity="top|start" />
+
                 </android.support.v7.widget.Toolbar>
 
             </android.support.design.widget.CollapsingToolbarLayout>
@@ -47,22 +48,22 @@
         <!-- Actual content -->
         <android.support.v7.widget.RecyclerView
             android:id="@+id/books_rv"
-            android:visibility="visible"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:paddingTop="8dp"
             android:clipToPadding="false"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior"
-            android:scrollbars="vertical" />
+            android:paddingTop="8dp"
+            android:scrollbars="vertical"
+            android:visibility="visible"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
         <TextView
             android:id="@+id/placeholder_text"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_margin="@dimen/activity_margin_content"
             android:text="@string/search_init"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior"
             android:visibility="visible"
-            android:layout_margin="@dimen/activity_margin_content"/>
+            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
     </android.support.design.widget.CoordinatorLayout>
 </layout>

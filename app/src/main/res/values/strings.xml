@@ -1,8 +1,8 @@
 <resources>
     <string name="google_api_key">AIzaSyAwCzy3-IuwqBgO2xD3e3bRASlSAWJF0Fs</string>
-    <string name="app_name">BooksExplorer</string>
-    <string name="search_title">Search books</string>
-    <string name="search_progress">Searching in progress&#8230;</string>
+    <string name="app_name">Books Explorer</string>
+    <string name="search_title">Books explorer</string>
+    <string name="search_progress">Searching for %1$s &#8230;</string>
     <string name="search_no_results">No results found</string>
     <string name="search_init">Looking for books? You are at the right place!</string>
     <string name="search_hint">Search books</string>

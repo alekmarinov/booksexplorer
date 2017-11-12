@@ -8,10 +8,8 @@ package com.exercise.booksexplorer.books;
 import android.content.Context;
 import android.content.Intent;
 import android.databinding.DataBindingUtil;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 
 import com.bumptech.glide.Glide;
@@ -21,60 +19,27 @@ import com.exercise.booksexplorer.databinding.ActivityBookDetailsBinding;
 import com.exercise.booksexplorer.util.StringUtils;
 import com.google.api.services.books.model.Volume;
 
-import java.io.IOException;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 
+/**
+ * Activity displaying the details of a single book
+ */
 public class BookDetailsActivity extends BaseActivity {
     private static final String TAG = BookDetailsActivity.class.getSimpleName();
     private ActivityBookDetailsBinding mDetailsBinding;
+    private Disposable mDisposable;
 
     public enum Param {
-        ID
-    }
-
-    /**
-     * Load book callbacks interface
-     */
-    private interface LoadCallbacks {
         /**
-         * Called back on load success
-         *
-         * @param volume
+         * The id of a volume item
          */
-        public void onSuccess(Volume volume);
-
-        /**
-         * Called back on load failure
-         *
-         * @param throwable
-         */
-        public void onFailure(Throwable throwable);
-    }
-
-    /**
-     * Implements load responses
-     */
-    private LoadCallbacks mOnLoad = new LoadCallbacks() {
-        @Override
-        public void onSuccess(Volume volume) {
-            updateVolume(volume);
-        }
-
-        @Override
-        public void onFailure(Throwable throwable) {
-            showError(R.string.error_unknown);
-        }
-    };
-
-
-    private void updateVolume(Volume volume) {
-        if (volume.getVolumeInfo().getImageLinks() != null)
-            Glide.with(this).load(volume.getVolumeInfo().getImageLinks().getThumbnail()).into(mDetailsBinding.bookThumbnailImageview);
-        mDetailsBinding.bookAuthorsTextview.setText(StringUtils.concat(volume.getVolumeInfo().getAuthors()));
-        mDetailsBinding.bookTitleTextview.setText(volume.getVolumeInfo().getTitle());
-        mDetailsBinding.bookPublisherTextview.setText(volume.getVolumeInfo().getPublisher());
-        mDetailsBinding.bookDescription.setText(volume.getVolumeInfo().getDescription());
-
-        getSupportActionBar().setTitle(volume.getVolumeInfo().getTitle());
+        VOLUME_ID
     }
 
     @Override
@@ -84,14 +49,30 @@ public class BookDetailsActivity extends BaseActivity {
         mDetailsBinding = DataBindingUtil.setContentView(this, R.layout.activity_book_details);
 
         setSupportActionBar(mDetailsBinding.toolbar);
-        ActionBar actionBar = getSupportActionBar();
-        if(actionBar != null){
-            actionBar.setDisplayHomeAsUpEnabled(true);
-//            actionBar.setIcon(R.drawable.app_icon);
-        }
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        final String bookId = getIntent().getStringExtra(Param.ID.name());
-        new LoadTask(mOnLoad).execute(bookId);
+        final String bookId = getIntent().getStringExtra(Param.VOLUME_ID.name());
+
+        mDisposable = Observable.create(new ObservableOnSubscribe<Volume>() {
+            @Override
+            public void subscribe(ObservableEmitter<Volume> e) throws Exception {
+                e.onNext(getBooks().volumes().get(bookId).execute());
+            }
+        }).subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        new Consumer<Volume>() {
+                            @Override
+                            public void accept(Volume volume) throws Exception {
+                                updateVolume(volume);
+                            }
+                        }, new Consumer<Throwable>() {
+                            @Override
+                            public void accept(Throwable throwable) throws Exception {
+                                Log.e(TAG, throwable.getMessage(), throwable);
+                                showError(R.string.error_unknown);
+                            }
+                        });
     }
 
     @Override
@@ -100,42 +81,26 @@ public class BookDetailsActivity extends BaseActivity {
         return true;
     }
 
-    private class LoadTask extends AsyncTask<String, Integer, Volume> {
-        private Throwable mThrowable;
-        private LoadCallbacks mOnLoad;
+    public void onStop() {
+        super.onStop();
+        Log.i(TAG,".onStop");
+        if (mDisposable != null)
+            mDisposable.dispose();
+    }
 
-        LoadTask(LoadCallbacks onLoad) {
-            mOnLoad = onLoad;
-        }
-
-        @Override
-        protected Volume doInBackground(String... bookId) {
-            try {
-                return getBooks().volumes().get(bookId[0]).execute();
-            } catch (IOException e) {
-                Log.e(TAG, e.getMessage(), e);
-                mThrowable = e;
-            }
-            return null;
-        }
-
-        @Override
-        protected void onProgressUpdate(Integer... progress) {
-        }
-
-        @Override
-        protected void onPostExecute(Volume volume) {
-            if (mThrowable != null)
-                mOnLoad.onFailure(mThrowable);
-            else {
-                mOnLoad.onSuccess(volume);
-            }
-        }
+    private void updateVolume(Volume volume) {
+        if (volume.getVolumeInfo().getImageLinks() != null)
+            Glide.with(this).load(volume.getVolumeInfo().getImageLinks().getThumbnail()).into(mDetailsBinding.bookThumbnailImageview);
+        mDetailsBinding.bookAuthorsTextview.setText(StringUtils.concat(volume.getVolumeInfo().getAuthors()));
+        mDetailsBinding.bookTitleTextview.setText(volume.getVolumeInfo().getTitle());
+        mDetailsBinding.bookPublisherTextview.setText(volume.getVolumeInfo().getPublisher());
+        mDetailsBinding.bookDescription.setText(volume.getVolumeInfo().getDescription());
+        getSupportActionBar().setTitle(volume.getVolumeInfo().getTitle());
     }
 
     public static Intent makeIntent(Context context, Volume book) {
         Intent intent = new Intent(context, BookDetailsActivity.class);
-        intent.putExtra(Param.ID.name(), book.getId());
+        intent.putExtra(Param.VOLUME_ID.name(), book.getId());
         return intent;
     }
 }

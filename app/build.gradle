@@ -36,7 +36,8 @@ dependencies {
     // Testing-only dependencies
     androidTestCompile 'com.android.support.test:runner:1.0.1'
     androidTestCompile 'com.android.support.test.espresso:espresso-core:3.0.1'
-    androidTestCompile('com.android.support.test.espresso:espresso-contrib:3.0.1')
+    androidTestCompile 'com.android.support.test.espresso:espresso-contrib:3.0.1'
+    compile 'com.android.support.test.espresso:espresso-idling-resource:3.0.1';
 
     compile 'com.google.apis:google-api-services-books:v1-rev93-1.23.0'
     compile 'com.android.support:appcompat-v7:26.+'
@@ -53,4 +54,5 @@ dependencies {
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
     testCompile 'junit:junit:4.12'
     implementation "android.arch.paging:runtime:1.0.0-alpha3"
+
 }

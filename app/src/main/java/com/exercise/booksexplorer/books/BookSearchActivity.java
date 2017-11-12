@@ -9,6 +9,10 @@ import android.app.SearchManager;
 import android.content.Intent;
 import android.databinding.DataBindingUtil;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
+import android.support.test.espresso.IdlingResource;
+import android.support.test.espresso.idling.CountingIdlingResource;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.SearchView;
 import android.util.Log;
@@ -17,6 +21,7 @@ import android.view.View;
 import com.exercise.booksexplorer.BaseActivity;
 import com.exercise.booksexplorer.R;
 import com.exercise.booksexplorer.databinding.ActivityBookSearchBinding;
+import com.exercise.booksexplorer.util.SimpleIdlingResource;
 import com.google.api.services.books.Books;
 import com.google.api.services.books.model.Volume;
 import com.google.api.services.books.model.Volumes;
@@ -30,42 +35,135 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 
-public class BookSearchActivity extends BaseActivity {
+/**
+ * Search books activity. Handles intent ACTION_SEARCH.
+ */
+public class BookSearchActivity extends BaseActivity implements SearchView.OnQueryTextListener {
     private static final String TAG = BookSearchActivity.class.getSimpleName();
     private ActivityBookSearchBinding mBookSearchBinding;
     private BookSearchAdapter adapter;
     private VolumesObservable mVolumesObservable;
+    private SimpleIdlingResource mIdlingResource;
 
+    // Google Books API accessor
+    @Inject
+    Books mBooks;
+
+    /**
+     * Observable providing new page with volume items asynchronously
+     */
     private class VolumesObservable implements ObservableOnSubscribe<List<Volume>> {
+
+        // The search term
         private String mQuery;
+
+        // The start item to request from server. Used to perform page by page request.
         private int mStart = 0;
+
+        // The total number of items by the query result
         private int mTotalItems;
+
+        // The number of items in the current page
         private int mItemsCount;
-        private boolean mIsLoading;
-        private SearchCallbacks mSearchCallbacks;
 
-        public VolumesObservable(String query, SearchCallbacks searchCallbacks) {
+        // A handler to the background task
+        private Disposable mDisposable;
+
+        /**
+         * Constructs the VolumesObservable with query and success/failure callback handlers
+         *
+         * @param query           a query to perform the search for books
+         */
+        public VolumesObservable(String query) {
             mQuery = query;
-            mSearchCallbacks = searchCallbacks;
         }
 
+        /**
+         * @return true if the task is working in progress, false otherwise
+         */
         public boolean isLoading() {
-            return mIsLoading;
+            return !mIdlingResource.isIdleNow();
         }
 
+        /**
+         * @return true if more volume pages are present
+         */
         boolean hasMore() {
             return mStart < mTotalItems;
         }
 
+        /**
+         * Requests the first or next page
+         */
+        public void nextPage() {
+            Log.i(TAG, ".nextPage: mStart = " + mStart + ", mItemsCount = " + mItemsCount);
+            mStart = mStart + mItemsCount;
+
+            // Prevent more than one tasks at a time by replacing the previous one with the new requested
+            if (mDisposable != null) {
+                mDisposable.dispose();
+            }
+
+            mDisposable = Observable.create(this)
+                    .subscribeOn(Schedulers.newThread())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(
+                            new Consumer<List<Volume>>() {
+                                @Override
+                                public void accept(List<Volume> volumeList) throws Exception {
+                                    mItemsCount = volumeList.size();
+                                    mIdlingResource.setIdleState(true);
+
+                                    // stops the loading indicator and add the new volumes
+                                    adapter.removeLoadingFooter();
+                                    addVolumes(volumeList);
+                                }
+                            }, new Consumer<Throwable>() {
+                                @Override
+                                public void accept(Throwable throwable) throws Exception {
+                                    Log.e(TAG, throwable.getMessage(), throwable);
+                                    mItemsCount = 0;
+                                    mIdlingResource.setIdleState(true);
+                                    if (adapter.getItemCount() > 0)
+                                        // Show retry at the bottom of the list if failure occurred when some items are already present
+                                        adapter.showRetry(true, R.string.error_unknown);
+                                    else {
+                                        // Show central error message at the place of the items list
+                                        showError(R.string.error_unknown);
+                                        hideResultPlaceHolder();
+                                    }
+                                }
+                            });
+        }
+
+        /**
+         * Retries retrieving last page
+         */
+        public void retry() {
+            Log.i(TAG, ".retry");
+            // next page will start at the same position as the current
+            mItemsCount = 0;
+            nextPage();
+        }
+
+        /**
+         * Implements the subscribe method from ObservableOnSubscribe interface
+         * used to retrieve the next page volumes in a background task
+         */
         @Override
-        public void subscribe(ObservableEmitter<List<Volume>> e) throws Exception {
-            mIsLoading = true;
+        public void subscribe(ObservableEmitter<List<Volume>> emitter) throws Exception {
+            mIdlingResource.setIdleState(false);
             Books.Volumes.List volumeList = getBooks().volumes().list(mQuery);
+
+            // Set offset of the new page requested
             volumeList.setStartIndex(Long.valueOf(mStart));
             Volumes volumes = volumeList.execute();
+
+            // Keep the total items in order to know if there are more pages to come
             mTotalItems = volumes.getTotalItems();
 
             List<Volume> items = volumes.getItems();
@@ -73,94 +171,40 @@ public class BookSearchActivity extends BaseActivity {
                 // Null values are generally not allowed in 2.x operators and sources.
                 items = new ArrayList<>();
             }
-            e.onNext(items);
-            e.onComplete();
+            emitter.onNext(items);
+            emitter.onComplete();
         }
-
-        public void nextPage() {
-            Log.i(TAG, ".nextPage: mStart = " + mStart + ", mItemsCount = " + mItemsCount);
-            mStart = mStart + mItemsCount;
-            Observable.create(this)
-                    .subscribeOn(Schedulers.newThread()) // Create a new Thread
-                    .observeOn(AndroidSchedulers.mainThread()) // Use the UI thread
-                    .subscribe(
-                            new Consumer<List<Volume>>() {
-                                @Override
-                                public void accept(List<Volume> volumeList) throws Exception {
-                                    mSearchCallbacks.onSuccess(volumeList);
-                                    if (volumeList != null)
-                                        mItemsCount = volumeList.size();
-                                    mIsLoading = false;
-                                }
-                            }, new Consumer<Throwable>() {
-                                @Override
-                                public void accept(Throwable throwable) throws Exception {
-                                    Log.e(TAG, throwable.getMessage(), throwable);
-                                    mSearchCallbacks.onFailure(throwable);
-                                    mItemsCount = 0;
-                                    mIsLoading = false;
-                                }
-                            });
-        }
-
-        public void retry() {
-            Log.i(TAG, ".retry");
-            mItemsCount = 0;
-            nextPage();
-        }
-
-    }
-
-    @Inject
-    Books mBooks;
-
-    private void performSearch(String query) {
-        Log.i(TAG, ".performSearch: query = " + query);
-        setResultPlaceHolder(R.string.search_progress);
-        adapter.clear();
-        mVolumesObservable = new VolumesObservable(query, mOnSearch);
-        mVolumesObservable.nextPage();
-    }
-
-    /**
-     * Search result callbacks interface
-     */
-    private interface SearchCallbacks {
-        /**
-         * Called back on search success
-         *
-         * @param volumes
-         */
-        public void onSuccess(List<Volume> volumes);
 
         /**
-         * Called back on search failure
-         *
-         * @param throwable
+         * Cancels the subscription to this observable
          */
-        public void onFailure(Throwable throwable);
-    }
-
-    /**
-     * Implements search responses
-     */
-    private SearchCallbacks mOnSearch = new SearchCallbacks() {
-        @Override
-        public void onSuccess(List<Volume> volumeList) {
-            adapter.removeLoadingFooter();
-            updateVolumes(volumeList);
-        }
-
-        @Override
-        public void onFailure(Throwable throwable) {
-            if (adapter.getItemCount() > 0)
-                adapter.showRetry(true, R.string.error_unknown);
-            else {
-                showError(R.string.error_unknown);
-                hideResultPlaceHolder();
+        public void cancel() {
+            if (mDisposable != null) {
+                mDisposable.dispose();
             }
         }
-    };
+    }
+
+
+    /**
+     * Handles query submit.
+     * The method can be invoked by SearchView or in response of intent ACTION_SEARCH
+     */
+    @Override
+    public boolean onQueryTextSubmit(String query) {
+        Log.i(TAG, ".performSearch: query = " + query);
+        mBookSearchBinding.searchView.setIconified(true);
+        setResultPlaceHolder(getString(R.string.search_progress, query));
+        adapter.clear();
+        mVolumesObservable = new VolumesObservable(query);
+        mVolumesObservable.nextPage();
+        return true;
+    }
+
+    @Override
+    public boolean onQueryTextChange(String newText) {
+        return false;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -168,20 +212,11 @@ public class BookSearchActivity extends BaseActivity {
 
         mBookSearchBinding = DataBindingUtil.setContentView(this, R.layout.activity_book_search);
         setSupportActionBar(mBookSearchBinding.toolbar);
-        mBookSearchBinding.searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-                performSearch(query);
-                return false;
-            }
 
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                return false;
-            }
-        });
+        // apply searchable options on the SearchView
         SearchManager searchManager = (SearchManager) getSystemService(SEARCH_SERVICE);
         mBookSearchBinding.searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+        mBookSearchBinding.searchView.setOnQueryTextListener(this);
 
         mBookSearchBinding.booksRv.setHasFixedSize(true);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
@@ -239,11 +274,11 @@ public class BookSearchActivity extends BaseActivity {
     private void handleIntent(Intent intent) {
         if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
             String query = intent.getStringExtra(SearchManager.QUERY);
-            performSearch(query);
+            onQueryTextSubmit(query);
         }
     }
 
-    private void updateVolumes(List<Volume> volumes) {
+    private void addVolumes(List<Volume> volumes) {
         if (volumes != null && volumes.size() > 0) {
             for (Volume volume : volumes) {
                 Log.i(TAG, volume.toString());
@@ -254,21 +289,40 @@ public class BookSearchActivity extends BaseActivity {
         if (adapter.getItemCount() > 0)
             hideResultPlaceHolder();
         else
-            setResultPlaceHolder(R.string.search_no_results);
+            setResultPlaceHolder(getString(R.string.search_no_results));
     }
 
-    private void setResultPlaceHolder(int resId) {
-        if (resId == 0) {
+    private void setResultPlaceHolder(String msg) {
+        if (msg == null) {
             mBookSearchBinding.booksRv.setVisibility(View.VISIBLE);
             mBookSearchBinding.placeholderText.setVisibility(View.INVISIBLE);
         } else {
             mBookSearchBinding.booksRv.setVisibility(View.INVISIBLE);
             mBookSearchBinding.placeholderText.setVisibility(View.VISIBLE);
-            mBookSearchBinding.placeholderText.setText(resId);
+            mBookSearchBinding.placeholderText.setText(msg);
         }
     }
 
     private void hideResultPlaceHolder() {
-        setResultPlaceHolder(0);
+        setResultPlaceHolder(null);
+    }
+
+    public void onStop() {
+        super.onStop();
+        Log.i(TAG,".onStop");
+        if (mVolumesObservable != null)
+            mVolumesObservable.cancel();
+    }
+
+    /**
+     * Only called from test, creates and returns a new {@link SimpleIdlingResource}.
+     */
+    @VisibleForTesting
+    @NonNull
+    public IdlingResource getIdlingResource() {
+        if (mIdlingResource == null) {
+            mIdlingResource = new SimpleIdlingResource();
+        }
+        return mIdlingResource;
     }
 }

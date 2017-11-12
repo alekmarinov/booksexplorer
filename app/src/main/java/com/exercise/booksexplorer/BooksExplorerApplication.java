@@ -11,6 +11,9 @@ import com.exercise.booksexplorer.dagger.components.AppComponent;
 import com.exercise.booksexplorer.dagger.components.DaggerAppComponent;
 import com.exercise.booksexplorer.dagger.modules.AppModule;
 
+import io.reactivex.internal.functions.Functions;
+import io.reactivex.plugins.RxJavaPlugins;
+
 public class BooksExplorerApplication extends Application {
   private AppComponent mAppComponent;
 
@@ -20,6 +23,8 @@ public class BooksExplorerApplication extends Application {
     mAppComponent = DaggerAppComponent.builder()
             .appModule(new AppModule(this))
             .build();
+
+    RxJavaPlugins.setErrorHandler(Functions.<Throwable>emptyConsumer());
   }
 
   public AppComponent getAppComponent() {
