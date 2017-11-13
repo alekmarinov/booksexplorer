@@ -16,6 +16,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 
 import com.exercise.booksexplorer.BaseActivity;
 import com.exercise.booksexplorer.R;
@@ -286,6 +287,7 @@ public class BookSearchActivity extends BaseActivity implements SearchView.OnQue
         adapter.clear();
         mVolumesObservable = new VolumesObservable(query, start);
         mVolumesObservable.nextPage();
+        hideSoftKeyboard();
     }
 
     private void handleIntent(Intent intent) {
@@ -307,6 +309,15 @@ public class BookSearchActivity extends BaseActivity implements SearchView.OnQue
             hideResultPlaceHolder();
         else
             setResultPlaceHolder(getString(R.string.search_no_results));
+    }
+
+    private void hideSoftKeyboard() {
+        View view = this.getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
+            if (imm != null)
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
     }
 
     private void setResultPlaceHolder(String msg) {

@@ -26,6 +26,10 @@ android {
         enabled = true
     }
 
+    lintOptions {
+        abortOnError false
+    }
+
     compileOptions.incremental = false
 }
 
